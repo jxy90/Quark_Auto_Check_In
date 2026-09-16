@@ -2,8 +2,8 @@ name: 夸克网盘每日签到
 
 on:
   schedule:
-    - cron: "0 1 * * *" # 北京时间 09:00
-    - cron: "0 5 * * *" # 北京时间 13:00，失败兜底
+    - cron: "17 1 * * *" # 北京时间 09:17，避开整点调度高峰
+    - cron: "23 5 * * *" # 北京时间 13:23，失败兜底并避开整点调度高峰
   workflow_dispatch:
 
 permissions:
@@ -63,10 +63,41 @@ jobs:
         run: python -m pip install --disable-pip-version-check -r requirements.txt
 
       - name: 执行签到脚本
+        id: sign-in
         if: steps.cache-success.outputs.cache-hit != 'true'
         env:
           COOKIE_QUARK: ${{ secrets.COOKIE_QUARK }}
-        run: python checkIn_Quark.py
+        shell: bash
+        run: |
+          set +e
+          python checkIn_Quark.py | tee sign-in.log
+          exit_code=${PIPESTATUS[0]}
+          echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
+          exit "$exit_code"
+
+      - name: 发送 Server 酱通知
+        if: always() && steps.cache-success.outputs.cache-hit != 'true'
+        env:
+          SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
+          SIGNIN_EXIT_CODE: ${{ steps.sign-in.outputs.exit_code }}
+        shell: bash
+        run: |
+          if [ -z "$SERVERCHAN_SENDKEY" ]; then
+            echo "未配置 SERVERCHAN_SENDKEY，跳过 Server 酱通知。"
+            exit 0
+          fi
+
+          if [ "$SIGNIN_EXIT_CODE" = "0" ]; then
+            title="夸克网盘签到成功"
+          else
+            title="夸克网盘签到失败"
+          fi
+
+          curl --fail --silent --show-error --max-time 20 \
+            --data-urlencode "title=$title" \
+            --data-urlencode "desp@sign-in.log" \
+            "https://sctapi.ftqq.com/${SERVERCHAN_SENDKEY}.send" \
+            || echo "Server 酱通知发送失败，请检查 SendKey 和推送通道配置。"
 
       - name: 生成今日成功标记
         if: success() && steps.cache-success.outputs.cache-hit != 'true'
