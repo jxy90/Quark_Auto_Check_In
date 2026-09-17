@@ -26,7 +26,10 @@ class WorkflowSyntaxTests(unittest.TestCase):
             step for step in steps if step["name"] == "发送 Server 酱通知"
         )
 
-        self.assertEqual(cron_expressions, {"17 1 * * *", "23 5 * * *"})
+        self.assertEqual(
+            cron_expressions,
+            {"17 1 * * *", "43 1 * * *", "23 5 * * *", "47 5 * * *"},
+        )
         self.assertIn("always()", notification_step["if"])
         self.assertEqual(
             notification_step["env"]["SERVERCHAN_SENDKEY"],
