@@ -95,7 +95,7 @@ jobs:
             title="夸克网盘签到失败"
           fi
 
-          curl --fail --silent --show-error --max-time 20 \
+          curl --fail --silent --show-error --max-time 20 --output /dev/null \
             --data-urlencode "title=$title" \
             --data-urlencode "desp@sign-in.log" \
             "https://sctapi.ftqq.com/${SERVERCHAN_SENDKEY}.send" \
