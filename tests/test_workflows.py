@@ -28,7 +28,7 @@ class WorkflowSyntaxTests(unittest.TestCase):
 
         self.assertEqual(
             cron_expressions,
-            {"17 1 * * *", "43 1 * * *", "23 5 * * *", "47 5 * * *"},
+            {"17 19 * * *", "43 20 * * *", "23 3 * * *"},
         )
         self.assertIn("always()", notification_step["if"])
         self.assertEqual(
